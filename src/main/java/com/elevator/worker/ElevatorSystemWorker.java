@@ -13,6 +13,7 @@ import com.elevator.exception.SystemError;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 
 public class ElevatorSystemWorker {
 
@@ -151,17 +152,31 @@ public class ElevatorSystemWorker {
             }
             System.out.println(person.getName() + " нажал на кнопку " + person.getFinishFloor() + " внутри лифта");
             Elevator.sleepForAction(500);
-
+            if (person.getStop() == Boolean.TRUE) {
+                pushStopButtonAsync(person);
+            }
         });
 
         waitingPersons.clear();
+    }
+
+    private void pushStopButtonAsync(Person person) {
+        CompletableFuture.runAsync(() -> {
+            Elevator.sleepForAction(person.getTimeoutBeforePushStop() * 1000);
+            System.out.println(person.getName() + " нажимает кнопку STOP.");
+            elevator.pushStopButton();
+
+            Elevator.sleepForAction(person.getTimeoutAfterPushStop() * 1000);
+            System.out.println(person.getName() + " нажимает кнопку STOP.");
+            elevator.pushStopButton();
+        });
     }
 
     private void checkStopButton() throws ElevatorSystemException {
         boolean messageSent = false;
         while (ElevatorButton.STOP.isActive()) {
             if (!messageSent) {
-                System.out.println("Лифт не может ехать. Ожидается повторное нажатие кнопки STOP...");
+                System.out.println("Ожидается повторное нажатие кнопки STOP...");
                 messageSent = true;
             }
             Elevator.sleepForAction(100);

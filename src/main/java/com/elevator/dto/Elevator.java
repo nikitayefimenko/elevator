@@ -52,6 +52,16 @@ public class Elevator {
         }
     }
 
+    public void pushStopButton(){
+        if(!ElevatorButton.STOP.isActive()){
+            ElevatorButton.STOP.setActive(true);
+            System.out.println("Лифт не может двигаться дальше, нажата кнопка STOP.");
+        } else {
+            ElevatorButton.STOP.setActive(false);
+            System.out.println("Лифт может двигаться, кнопка STOP не активна.");
+        }
+    }
+
     public static void sleepForAction(int sleepTimeout) {
         try {
             Thread.sleep(sleepTimeout);
