@@ -50,9 +50,9 @@ public class ElevatorValidator {
 
     private List<Person> buildTestData() {
         List<Person> testData = new ArrayList<>();
-        testData.add(new Person("Никита", 1, 4));
-        testData.add(new Person("Олег", 3, 2));
-        testData.add(new Person("Ирина", 4, 1));
+        testData.add(new Person("Nikita", 1, 4));
+        testData.add(new Person("Mike", 3, 2));
+        testData.add(new Person("Irina", 4, 1));
 
         return testData;
     }

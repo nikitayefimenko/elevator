@@ -10,6 +10,7 @@ import com.elevator.exception.ValidationException;
 import com.elevator.validation.ElevatorValidator;
 import com.elevator.worker.ElevatorSystemWorker;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Scanner;
 
@@ -25,7 +26,7 @@ public class ElevatorStartJob {
 
     public void start() {
         printStartInstruction();
-        try (Scanner scanner = new Scanner(System.in)) {
+        try (Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.name())) {
             while (true) {
                 String inputData = getInputDataFromConsole(scanner);
 
@@ -44,9 +45,9 @@ public class ElevatorStartJob {
                     break;
                 }
 
-                System.out.println("\nРабота лифта завершена. Желаете ввести новые данные? (да/нет)\n");
+                System.out.println("\nРабота лифта завершена. Желаете ввести новые данные? (yes/no)\n");
                 String continueAnswer = scanner.nextLine();
-                if (!continueAnswer.equals("да")) {
+                if (!continueAnswer.equals("yes")) {
                     System.out.println("Спасибо что воспользовались нашими услугами. До свидания!");
                     break;
                 }
@@ -56,7 +57,7 @@ public class ElevatorStartJob {
         }
     }
 
-    private void runElevatorSystem(List<Person> waitingPersons) throws ElevatorSystemException {
+    public void runElevatorSystem(List<Person> waitingPersons) throws ElevatorSystemException {
         sendPersonsToFloorsAndPushButtons(waitingPersons);
         ElevatorSystemWorker elevatorSystemWorker = new ElevatorSystemWorker(new Elevator(Floor.FIRST));
         elevatorSystemWorker.runElevatorSystem();
@@ -109,23 +110,24 @@ public class ElevatorStartJob {
     private void printStartInstruction() {
         System.out.println("\nВведите массив людей (в формате json), ожидающих лифт, указав так-же их параметры, после окончания ввода данных вида json необходимо написать end.\n" +
                 "Все параметры кроме stop, timeoutBeforePushStop, timeoutAfterPushStop - обязательные\n" +
-                "timeoutBeforePushStop - время в секундах (целое число), которое отсчитывается после нажатия кнопки (finishFloor) человеком внутри лифта, по истечению данного времени человек нажимает кнопку STOP\n" +
-                "timeoutAfterPushStop - время в секундах (целое число), которое отсчитывается после нажатия кнопки STOP, по истечению данного времени человек нажимает кнопку STOP для продолжения движения лифта\n" +
+                "timeoutBeforePushStop - время в секундах (целое число, по умолчанию 0), которое отсчитывается после нажатия кнопки (finishFloor) человеком внутри лифта, по истечению данного времени человек нажимает кнопку STOP\n" +
+                "timeoutAfterPushStop - время в секундах (целое число, по умолчанию 0), которое отсчитывается после нажатия кнопки STOP, по истечению данного времени человек нажимает кнопку STOP для продолжения движения лифта\n" +
+                "Если в параметры startFloor, finishFloor, timeoutBeforePushStop, timeoutAfterPushStop будет введено не целое значение - дробная часть числа будет опущена\n" +
                 "\n" +
                 "Пример:\n" +
                 "[\t\t{\n" +
-                "\t\t\t\"name\": \"Никита\",\n" +
+                "\t\t\t\"name\": \"Nikita\",\n" +
                 "\t\t\t\"startFloor\": 1,\n" +
                 "\t\t\t\"finishFloor\": 4\n" +
                 "\t\t},\n" +
                 "\t\t{\n" +
-                "\t\t\t\"name\": \"Олег\",\n" +
+                "\t\t\t\"name\": \"Mike\",\n" +
                 "\t\t\t\"startFloor\": 3,\n" +
                 "\t\t\t\"finishFloor\": 2,\n" +
                 "\t\t\t\"stop\": false\n" +
                 "\t\t},\n" +
                 "\t\t{\n" +
-                "\t\t\t\"name\": \"Ирина\",\n" +
+                "\t\t\t\"name\": \"Irina\",\n" +
                 "\t\t\t\"startFloor\": 4,\n" +
                 "\t\t\t\"finishFloor\": 1,\n" +
                 "\t\t\t\"stop\": true,\n" +
