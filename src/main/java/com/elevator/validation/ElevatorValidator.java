@@ -25,6 +25,10 @@ public class ElevatorValidator {
     private static final String VALIDATION_ERROR_MESSAGE = "Ошибка! Вы ввели некорректный массив с данными в виде json. Повторите пожалуйста ввод, следуя примеру описанному выше.\n";
 
     public List<Person> validateAndGetPersonsFromInputData(String inputData) throws ValidationException {
+        if (inputData.equals("test")) {
+            return buildTestData();
+        }
+
         try {
             ObjectMapper mapper = JsonMapperConfigurer.getObjectMapper();
             JsonNode inputArrayNode = mapper.readTree(inputData);
@@ -42,6 +46,15 @@ public class ElevatorValidator {
         } catch (IOException e) {
             throw new ValidationException(VALIDATION_ERROR_MESSAGE);
         }
+    }
+
+    private List<Person> buildTestData() {
+        List<Person> testData = new ArrayList<>();
+        testData.add(new Person("Никита", 1, 4));
+        testData.add(new Person("Олег", 3, 2));
+        testData.add(new Person("Ирина", 4, 1));
+
+        return testData;
     }
 
     private void validatePersons(List<Person> persons) throws ValidationException {
@@ -98,7 +111,7 @@ public class ElevatorValidator {
         }
 
         if (timeoutAfterPushStop > 60) {
-            throw new ValidationException(VALIDATION_ERROR_MESSAGE + String.format("Поле timeoutAfterPushStop у человека %s не может быть больше 60 секунд. Сделайте значение меньше. Пожалуйста, сделайте значение меньше.", name));
+            throw new ValidationException(VALIDATION_ERROR_MESSAGE + String.format("Поле timeoutAfterPushStop у человека %s не может быть больше 60 секунд. Пожалуйста, сделайте значение меньше.", name));
         }
     }
 

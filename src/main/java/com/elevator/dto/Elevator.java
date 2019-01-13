@@ -32,12 +32,8 @@ public class Elevator {
     @Getter
     private List<Person> insidePersons = new ArrayList<>();
 
-    public void addInsidePersons(List<Person> outsidePersons){
+    public void addInsidePersons(List<Person> outsidePersons) {
         this.insidePersons.addAll(outsidePersons);
-    }
-
-    public void removeInsidePerson(Person person){
-        this.insidePersons.remove(person);
     }
 
     public void activateButton(int buttonValue) throws ElevatorSystemException {
@@ -47,13 +43,13 @@ public class Elevator {
 
     public void deactivateButton(int buttonValue) throws ElevatorSystemException {
         ElevatorButton elevatorButton = ElevatorButton.getButtonByValue(buttonValue);
-        if(elevatorButton.isActive()){
+        if (elevatorButton.isActive()) {
             elevatorButton.setActive(false);
         }
     }
 
-    public void pushStopButton(){
-        if(!ElevatorButton.STOP.isActive()){
+    public void pushStopButton() {
+        if (!ElevatorButton.STOP.isActive()) {
             ElevatorButton.STOP.setActive(true);
             System.out.println("Лифт не может двигаться дальше, нажата кнопка STOP.");
         } else {

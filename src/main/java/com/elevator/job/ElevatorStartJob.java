@@ -31,7 +31,7 @@ public class ElevatorStartJob {
 
                 List<Person> waitingPersons = null;
                 try {
-                    waitingPersons = ElevatorValidator.gI().validateAndGetPersonsFromInputData(inputData.toString());
+                    waitingPersons = ElevatorValidator.gI().validateAndGetPersonsFromInputData(inputData);
                 } catch (ValidationException e) {
                     System.out.println(e.getMessage());
                     continue;
@@ -66,6 +66,10 @@ public class ElevatorStartJob {
         StringBuilder inputData = new StringBuilder();
         while (scanner.hasNext()) {
             String line = scanner.nextLine().trim();
+            if (line.equals("test")) {
+                return line;
+            }
+
             if (line.endsWith("end")) {
                 line = line.substring(0, line.length() - 3);
                 inputData.append(line);

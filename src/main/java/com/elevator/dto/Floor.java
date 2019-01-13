@@ -47,14 +47,6 @@ public enum Floor {
         }
     }
 
-    public void deactivateButton(Direction direction) {
-        for (FloorButton floorButton : this.floorButtons) {
-            if (floorButton.getDirection() == direction) {
-                floorButton.setActive(false);
-            }
-        }
-    }
-
     public void deactivateAllButtons() {
         for (FloorButton floorButton : this.floorButtons) {
             floorButton.setActive(false);
@@ -74,10 +66,5 @@ public enum Floor {
     public void addPersonToFloor(Person person) {
         this.waitingPersons.add(person);
     }
-
-    public void removePersonFromFloor(Person person) {
-        this.waitingPersons.remove(person);
-    }
-
 
 }

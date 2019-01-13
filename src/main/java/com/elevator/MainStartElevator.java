@@ -8,5 +8,4 @@ public class MainStartElevator {
         ElevatorStartJob.gI().start();
     }
 
-
 }
