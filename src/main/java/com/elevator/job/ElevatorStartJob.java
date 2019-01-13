@@ -86,10 +86,13 @@ public class ElevatorStartJob {
                 System.out.println("Невозможно определить текущий этаж человека " + person.getName());
             } else {
                 startFloor.addPersonToFloor(person);
-                if (isPersonMoveUp(startFloorNumber, person.getFinishFloor())) {
+                System.out.println(String.format("%s ожидает лифт на %d этаже, хочет попасть на %d этаж", person.getName(), person.getStartFloor(), person.getFinishFloor()));
+                if (isPersonMoveUp(startFloorNumber, person.getFinishFloor()) && !startFloor.isButtonActive(Direction.UP)) {
                     startFloor.activateButton(Direction.UP);
-                } else {
+                    System.out.println(person.getName() + " нажал кнопку \"вверх\" на этаже " + person.getStartFloor() + "\n");
+                } else if (!isPersonMoveUp(startFloorNumber, person.getFinishFloor()) && !startFloor.isButtonActive(Direction.DOWN)) {
                     startFloor.activateButton(Direction.DOWN);
+                    System.out.println(person.getName() + " нажал кнопку \"вниз\" на этаже " + person.getStartFloor() + "\n");
                 }
             }
         });

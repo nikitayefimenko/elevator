@@ -46,8 +46,7 @@ public class ElevatorSystemWorker {
         Floor minFloorWithActiveUpButton = null;
         Floor maxFloorWithActiveDownButton = null;
         for (Floor floor : Floor.values()) {
-            List<FloorButton> floorButtons = floor.getFloorButtons();
-            for (FloorButton floorButton : floorButtons) {
+            for (FloorButton floorButton : floor.getFloorButtons()) {
                 if (floorButton.getDirection() == Direction.UP && floorButton.isActive()) {
                     if (minFloorWithActiveUpButton == null || minFloorWithActiveUpButton.getNumber() > floor.getNumber()) {
                         minFloorWithActiveUpButton = floor;
@@ -71,6 +70,7 @@ public class ElevatorSystemWorker {
 
     private void processTask(ElevatorTask elevatorTask) throws ElevatorSystemException {
         Floor destinationFloor = elevatorTask.getDestinationFloor();
+        System.out.println(String.format("Лифт принял команду из очереди - перемещение на %d этаж", destinationFloor.getNumber()));
         Direction movingDirection = calcMovingDirection(this.elevator.getCurrentFloor().getNumber(), destinationFloor.getNumber());
         this.elevator.setMovingDirection(movingDirection);
         Floor nextFloor = this.elevator.getCurrentFloor();
@@ -94,7 +94,7 @@ public class ElevatorSystemWorker {
 
             if (!messageSent) {
                 closeDoors();
-                System.out.println(String.format("Началось движение на %d этаж...\n", destinationFloorNumber));
+                System.out.println(String.format("Началось перемещение на %d этаж...\n", destinationFloorNumber));
                 messageSent = true;
             }
 
@@ -107,7 +107,7 @@ public class ElevatorSystemWorker {
         }
 
         this.elevator.setCurrentFloor(destinationFloor);
-        System.out.println("Лифт прибыл к пункту назначения. Этаж - " + destinationFloorNumber);
+        System.out.println("\nЛифт прибыл к пункту назначения. Этаж - " + destinationFloorNumber);
         this.elevator.deactivateButton(destinationFloorNumber);
         openDoors();
     }
@@ -163,11 +163,11 @@ public class ElevatorSystemWorker {
     private void pushStopButtonAsync(Person person) {
         CompletableFuture.runAsync(() -> {
             Elevator.sleepForAction(person.getTimeoutBeforePushStop() * 1000);
-            System.out.println(person.getName() + " нажимает кнопку STOP.");
+            System.out.println("\n" + person.getName() + " нажимает кнопку STOP.\n");
             elevator.pushStopButton();
 
             Elevator.sleepForAction(person.getTimeoutAfterPushStop() * 1000);
-            System.out.println(person.getName() + " нажимает кнопку STOP.");
+            System.out.println("\n" + person.getName() + " нажимает кнопку STOP.\n");
             elevator.pushStopButton();
         });
     }
@@ -183,7 +183,7 @@ public class ElevatorSystemWorker {
         }
 
         if (messageSent) {
-            System.out.println("Лифт возобновил движение..");
+            System.out.println("\nЛифт возобновил движение..");
         }
     }
 

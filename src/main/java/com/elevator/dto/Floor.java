@@ -29,6 +29,16 @@ public enum Floor {
         this.floorButtons = floorButtons;
     }
 
+    public boolean isButtonActive(Direction direction) {
+        for (FloorButton floorButton : this.floorButtons) {
+            if (floorButton.getDirection() == direction) {
+                return floorButton.isActive();
+            }
+        }
+
+        return false;
+    }
+
     public void activateButton(Direction direction) {
         for (FloorButton floorButton : this.floorButtons) {
             if (floorButton.getDirection() == direction) {
