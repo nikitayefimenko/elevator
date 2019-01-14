@@ -1,12 +1,17 @@
 package com.elevator.dto.buttons;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class FloorButton {
+
+    public FloorButton(Direction direction, String name) {
+        this.direction = direction;
+        this.name = name;
+    }
+
     private Direction direction;
     private boolean active;
+    private String name;
 }

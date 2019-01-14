@@ -1,10 +1,13 @@
 package com.elevator.validation;
 
+import com.elevator.dto.PanelType;
 import com.elevator.dto.Person;
+import com.elevator.dto.data.InputData;
 import com.elevator.exception.ValidationException;
 import com.elevator.json.JsonMapperConfigurer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,27 +15,31 @@ import java.util.List;
 
 import static com.elevator.worker.ElevatorSystemWorker.calcMovingTime;
 
-public class ElevatorValidator {
-    private static ElevatorValidator ourInstance = new ElevatorValidator();
+public class InputDataValidator {
+    private static InputDataValidator ourInstance = new InputDataValidator();
 
-    public static ElevatorValidator gI() {
+    public static InputDataValidator gI() {
         return ourInstance;
     }
 
-    private ElevatorValidator() {
+    private InputDataValidator() {
     }
 
     private static final String VALIDATION_ERROR_MESSAGE = "Ошибка! Вы ввели некорректный массив с данными в виде json. Повторите пожалуйста ввод, следуя примеру описанному выше.\n";
 
-    public List<Person> validateAndGetPersonsFromInputData(String inputData) throws ValidationException {
-        if (inputData.equals("test")) {
+    public InputData validateAndGetInputData(String inputDataStr) throws ValidationException {
+        if (inputDataStr.equals("test")) {
             return buildTestData();
         }
 
         try {
             ObjectMapper mapper = JsonMapperConfigurer.getObjectMapper();
-            JsonNode inputArrayNode = mapper.readTree(inputData);
-            if (!inputArrayNode.isArray()) {
+            ObjectNode mainObjectNode = (ObjectNode) mapper.readTree(inputDataStr);
+            InputData inputData = new InputData();
+            inputData.setActivePanelType(validateAndGetPanelType(mainObjectNode));
+
+            JsonNode inputArrayNode = mainObjectNode.get("persons");
+            if (inputArrayNode == null || inputArrayNode.isNull() || !inputArrayNode.isArray()) {
                 throw new ValidationException(VALIDATION_ERROR_MESSAGE);
             }
 
@@ -42,19 +49,36 @@ public class ElevatorValidator {
             }
 
             validatePersons(waitingPersons);
-            return waitingPersons;
+            inputData.setWaitingPersons(waitingPersons);
+            return inputData;
         } catch (IOException e) {
             throw new ValidationException(VALIDATION_ERROR_MESSAGE);
         }
     }
 
-    private List<Person> buildTestData() {
+    private InputData buildTestData() {
         List<Person> testData = new ArrayList<>();
         testData.add(new Person("Nikita", 1, 4));
         testData.add(new Person("Mike", 3, 2));
         testData.add(new Person("Irina", 4, 1));
 
-        return testData;
+        return new InputData(PanelType.SINGLE, testData);
+    }
+
+    private PanelType validateAndGetPanelType(ObjectNode mainObjectNode) throws ValidationException {
+        JsonNode panelNode = mainObjectNode.get("panel");
+        if (panelNode == null || panelNode.isNull()) {
+            throw new ValidationException(VALIDATION_ERROR_MESSAGE + "Отсутствует название рабочей панели лифта - panel");
+        }
+
+        String panel = panelNode.asText().toUpperCase();
+        if (panel.equals(PanelType.SINGLE.name())) {
+            return PanelType.SINGLE;
+        } else if (panel.equals(PanelType.DOUBLE.name())) {
+            return PanelType.DOUBLE;
+        } else {
+            throw new ValidationException(VALIDATION_ERROR_MESSAGE + "Некорректное название рабочей панели лифта - panel. Необходимо single или double");
+        }
     }
 
     private void validatePersons(List<Person> persons) throws ValidationException {

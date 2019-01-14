@@ -45,8 +45,9 @@ public class ElevatorSystemWorker {
     private Floor findFloorToTakePersons() {
         Floor minFloorWithActiveUpButton = null;
         Floor maxFloorWithActiveDownButton = null;
+        Floor nearestFloorWithActiveSingleButton = null;
         for (Floor floor : Floor.values()) {
-            for (FloorButton floorButton : floor.getFloorButtons()) {
+            for (FloorButton floorButton : floor.getButtonsFromActivePanel()) {
                 if (floorButton.getDirection() == Direction.UP && floorButton.isActive()) {
                     if (minFloorWithActiveUpButton == null || minFloorWithActiveUpButton.getNumber() > floor.getNumber()) {
                         minFloorWithActiveUpButton = floor;
@@ -54,6 +55,10 @@ public class ElevatorSystemWorker {
                 } else if (floorButton.getDirection() == Direction.DOWN && floorButton.isActive()) {
                     if (maxFloorWithActiveDownButton == null || maxFloorWithActiveDownButton.getNumber() < floor.getNumber()) {
                         maxFloorWithActiveDownButton = floor;
+                    }
+                } else if (floorButton.getDirection() == Direction.ALL && floorButton.isActive()) {
+                    if (nearestFloorWithActiveSingleButton == null || isThisFloorNearThenOtherFlor(floor, nearestFloorWithActiveSingleButton)) {
+                        nearestFloorWithActiveSingleButton = floor;
                     }
                 }
             }
@@ -63,9 +68,16 @@ public class ElevatorSystemWorker {
             return minFloorWithActiveUpButton;
         } else if (maxFloorWithActiveDownButton != null) {
             return maxFloorWithActiveDownButton;
+        } else if (nearestFloorWithActiveSingleButton != null) {
+            return nearestFloorWithActiveSingleButton;
         } else {
             return null;
         }
+    }
+
+    private boolean isThisFloorNearThenOtherFlor(Floor thisFloor, Floor otherFlor) {
+        int currentFloorNumber = this.elevator.getCurrentFloor().getNumber();
+        return calcFloorDistance(currentFloorNumber, thisFloor.getNumber()) < calcFloorDistance(currentFloorNumber, otherFlor.getNumber());
     }
 
     private void processTask(ElevatorTask elevatorTask) throws ElevatorSystemException {
@@ -226,9 +238,10 @@ public class ElevatorSystemWorker {
     }
 
     private boolean isWaitingPersonsOnNextFloor(Floor nextFloor) {
-        List<FloorButton> nextFloorButtons = nextFloor.getFloorButtons();
+        List<FloorButton> nextFloorButtons = nextFloor.getButtonsFromActivePanel();
         for (FloorButton floorButton : nextFloorButtons) {
-            if (floorButton.getDirection() == this.elevator.getMovingDirection() && floorButton.isActive()) {
+            Direction buttonDirection = floorButton.getDirection();
+            if ((buttonDirection == this.elevator.getMovingDirection() || buttonDirection == Direction.ALL) && floorButton.isActive()) {
                 StringBuilder waitingNamesBuilder = new StringBuilder("Ожидающие: ");
                 for (Person person : nextFloor.getWaitingPersons()) {
                     waitingNamesBuilder.append(person.getName()).append(", ");
@@ -246,7 +259,7 @@ public class ElevatorSystemWorker {
         ElevatorButton nextFloorElevatorButton = ElevatorButton.getButtonByValue(nextFloor.getNumber());
         if (nextFloorElevatorButton.isActive()) {
             StringBuilder waitingNamesBuilder = new StringBuilder("Ожидающие высадки: ");
-            for (Person person : elevator.getInsidePersons()) {
+            for (Person person : this.elevator.getInsidePersons()) {
                 if (person.getFinishFloor() == nextFloor.getNumber()) {
                     waitingNamesBuilder.append(person.getName()).append(", ");
                 }

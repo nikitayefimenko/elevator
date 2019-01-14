@@ -1,5 +1,7 @@
 
+import com.elevator.dto.PanelType;
 import com.elevator.dto.Person;
+import com.elevator.dto.data.InputData;
 import com.elevator.exception.ElevatorSystemException;
 import com.elevator.job.ElevatorStartJob;
 import org.junit.Test;
@@ -31,6 +33,8 @@ public class TestElevatorSystem {
         stopPerson2.setTimeoutAfterPushStop(10);
         testData.add(stopPerson2);
 
-        ElevatorStartJob.gI().runElevatorSystem(testData);
+        InputData inputData = new InputData(PanelType.SINGLE, testData);
+
+        ElevatorStartJob.gI().pushButtonsAndRunSystem(inputData);
     }
 }

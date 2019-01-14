@@ -1,17 +1,16 @@
 package com.elevator.job;
 
-import com.elevator.dto.Elevator;
-import com.elevator.dto.Floor;
-import com.elevator.dto.Person;
+import com.elevator.dto.*;
 import com.elevator.dto.buttons.Direction;
+import com.elevator.dto.buttons.FloorButton;
+import com.elevator.dto.data.InputData;
 import com.elevator.exception.ElevatorSystemException;
 import com.elevator.exception.SystemError;
 import com.elevator.exception.ValidationException;
-import com.elevator.validation.ElevatorValidator;
+import com.elevator.validation.InputDataValidator;
 import com.elevator.worker.ElevatorSystemWorker;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Scanner;
 
 public class ElevatorStartJob {
@@ -28,18 +27,18 @@ public class ElevatorStartJob {
         printStartInstruction();
         try (Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.name())) {
             while (true) {
-                String inputData = getInputDataFromConsole(scanner);
+                String inputDataStr = getInputDataFromConsole(scanner);
 
-                List<Person> waitingPersons = null;
+                InputData inputData = null;
                 try {
-                    waitingPersons = ElevatorValidator.gI().validateAndGetPersonsFromInputData(inputData);
+                    inputData = InputDataValidator.gI().validateAndGetInputData(inputDataStr);
                 } catch (ValidationException e) {
                     System.out.println(e.getMessage());
                     continue;
                 }
 
                 try {
-                    runElevatorSystem(waitingPersons);
+                    pushButtonsAndRunSystem(inputData);
                 } catch (ElevatorSystemException | SystemError e) {
                     System.out.println(e.getMessage());
                     break;
@@ -57,8 +56,8 @@ public class ElevatorStartJob {
         }
     }
 
-    public void runElevatorSystem(List<Person> waitingPersons) throws ElevatorSystemException {
-        sendPersonsToFloorsAndPushButtons(waitingPersons);
+    public void pushButtonsAndRunSystem(InputData inputData) throws ElevatorSystemException {
+        sendPersonsToFloorsAndPushButtons(inputData);
         ElevatorSystemWorker elevatorSystemWorker = new ElevatorSystemWorker(new Elevator(Floor.FIRST));
         elevatorSystemWorker.runElevatorSystem();
     }
@@ -83,8 +82,11 @@ public class ElevatorStartJob {
         return inputData.toString();
     }
 
-    private void sendPersonsToFloorsAndPushButtons(List<Person> waitingPersons) {
-        waitingPersons.forEach(person -> {
+    private void sendPersonsToFloorsAndPushButtons(InputData inputData) {
+        PanelType activePanelType = inputData.getActivePanelType();
+        activateFloorPanel(activePanelType);
+
+        inputData.getWaitingPersons().forEach(person -> {
             int startFloorNumber = person.getStartFloor();
             Floor startFloor = Floor.getFloorByNumber(startFloorNumber);
             if (startFloor == null) {
@@ -92,19 +94,48 @@ public class ElevatorStartJob {
             } else {
                 startFloor.addPersonToFloor(person);
                 System.out.println(String.format("%s ожидает лифт на %d этаже, хочет попасть на %d этаж", person.getName(), person.getStartFloor(), person.getFinishFloor()));
-                if (isPersonMoveUp(startFloorNumber, person.getFinishFloor()) && !startFloor.isButtonActive(Direction.UP)) {
-                    startFloor.activateButton(Direction.UP);
-                    System.out.println(person.getName() + " нажал кнопку \"вверх\" на этаже " + person.getStartFloor() + "\n");
-                } else if (!isPersonMoveUp(startFloorNumber, person.getFinishFloor()) && !startFloor.isButtonActive(Direction.DOWN)) {
-                    startFloor.activateButton(Direction.DOWN);
-                    System.out.println(person.getName() + " нажал кнопку \"вниз\" на этаже " + person.getStartFloor() + "\n");
+
+                switch (activePanelType) {
+                    case SINGLE: {
+                        pushButtonByPerson(person.getName(), Direction.ALL, startFloor);
+                        break;
+                    }
+                    case DOUBLE: {
+                        if (isPersonMoveUp(startFloorNumber, person.getFinishFloor())) {
+                            pushButtonByPerson(person.getName(), Direction.UP, startFloor);
+                        } else {
+                            pushButtonByPerson(person.getName(), Direction.DOWN, startFloor);
+                        }
+                    }
                 }
             }
         });
     }
 
+    private void activateFloorPanel(PanelType activePanelType) {
+        for (Floor floor : Floor.values()) {
+            for (FloorPanel floorPanel : floor.getFloorPanels()) {
+                if (floorPanel.getPanelType() == activePanelType) {
+                    floorPanel.setWork(true);
+                }
+            }
+        }
+    }
+
     private boolean isPersonMoveUp(int startFloorNumber, int finishFloorNumber) {
         return startFloorNumber < finishFloorNumber;
+    }
+
+    private void pushButtonByPerson(String personName, Direction direction, Floor startFloor) {
+        if (!startFloor.isButtonActive(direction)) {
+            FloorButton button = startFloor.activateButton(direction);
+            if (button == null) {
+                System.out.println(String.format("%s не смог нажать свою кнопку на этаже %d", personName, startFloor.getNumber()));
+                return;
+            }
+
+            System.out.println(String.format("%s нажал кнопку \"%s\" на этаже %d\n", personName, button.getName(), startFloor.getNumber()));
+        }
     }
 
     private void printStartInstruction() {
@@ -115,7 +146,9 @@ public class ElevatorStartJob {
                 "Если в параметры startFloor, finishFloor, timeoutBeforePushStop, timeoutAfterPushStop будет введено не целое значение - дробная часть числа будет опущена\n" +
                 "\n" +
                 "Пример:\n" +
-                "[\t\t{\n" +
+                "{\n" +
+                "\t\"panel\": \"single\",\n" +
+                "\t\"persons\": [{\n" +
                 "\t\t\t\"name\": \"Nikita\",\n" +
                 "\t\t\t\"startFloor\": 1,\n" +
                 "\t\t\t\"finishFloor\": 4\n" +
@@ -134,8 +167,8 @@ public class ElevatorStartJob {
                 "\t\t\t\"timeoutBeforePushStop\": 3,\n" +
                 "\t\t\t\"timeoutAfterPushStop\": 1\n" +
                 "\t\t}\n" +
-                "]end\n" +
-                "\n" +
+                "\t]\n" +
+                "}end\n" +
                 "Если желаете запустить тестовый пример из задания - введите test\n" +
                 ">");
     }
