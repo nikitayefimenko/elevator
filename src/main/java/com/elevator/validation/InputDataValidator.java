@@ -1,5 +1,6 @@
 package com.elevator.validation;
 
+import com.elevator.dto.Floor;
 import com.elevator.dto.PanelType;
 import com.elevator.dto.Person;
 import com.elevator.dto.data.InputData;
@@ -58,9 +59,31 @@ public class InputDataValidator {
 
     private InputData buildTestData() {
         List<Person> testData = new ArrayList<>();
-        testData.add(new Person("Nikita", 1, 4));
-        testData.add(new Person("Mike", 3, 2));
-        testData.add(new Person("Irina", 4, 1));
+
+        testData.add(new Person("Mike", 2, 7));
+        testData.add(new Person("Irina", 2, 6));
+        testData.add(new Person("Helen", 2, 3));
+        testData.add(new Person("Natalie", 2, 3));
+        testData.add(new Person("Scott", 2, 10));
+        testData.add(new Person("John", 2, 9));
+        testData.add(new Person("Harry", 2, 3));
+        testData.add(new Person("Ron", 2, 10));
+        testData.add(new Person("Severus", 2, 5));
+        testData.add(new Person("Albus", 2, 3));
+        testData.add(new Person("Freddy", 2, 6));
+        testData.add(new Person("Jason", 6, 4));
+        testData.add(new Person("Lily", 4, 10));
+        testData.add(new Person("Bruce", 3, 10));
+        testData.add(new Person("Alex", 2, 10));
+        testData.add(new Person("Marty", 6, 1));
+        testData.add(new Person("Gloria", 7, 1));
+        testData.add(new Person("Kovalski", 8, 1));
+
+        Person vipPerson = new Person("Nikita", 5, 1);
+        vipPerson.setVip(true);
+        testData.add(vipPerson);
+
+        testData.add(new Person("Artur", 5, 10));
 
         return new InputData(PanelType.SINGLE, testData);
     }
@@ -121,7 +144,7 @@ public class InputDataValidator {
     }
 
     private void checkFloor(int floor, String nameOfField, String personName) throws ValidationException {
-        if (floor < 1 || floor > 4) {
+        if (floor < 1 || floor > Floor.values().length) {
             throw new ValidationException(VALIDATION_ERROR_MESSAGE + String.format("Поле %s имеет не корректное значение %d у человека с именем %s. Требуется число от 1 до 4.", nameOfField, floor, personName));
         }
     }

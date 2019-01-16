@@ -13,6 +13,7 @@ import java.util.List;
 public class Elevator {
     public static final int HEIGHT_IN_MILLIMETERS = 4000;
     public static final int SPEED_IN_MILLIS = 1000;
+    public static final int MAX_WEIGHT = 700;
 
     public Elevator(Floor currentFloor) {
         this.currentFloor = currentFloor;
@@ -32,17 +33,20 @@ public class Elevator {
     @Getter
     private List<Person> insidePersons = new ArrayList<>();
 
-    public void addInsidePersons(List<Person> outsidePersons) {
-        this.insidePersons.addAll(outsidePersons);
-    }
+    @Getter
+    @Setter
+    private boolean openedDoors;
 
-    public void activateButton(int buttonValue) throws ElevatorSystemException {
-        ElevatorButton elevatorButton = ElevatorButton.getButtonByValue(buttonValue);
-        elevatorButton.setActive(true);
+    public void addInsidePerson(Person outsidePerson) {
+        this.insidePersons.add(outsidePerson);
     }
 
     public void deactivateButton(int buttonValue) throws ElevatorSystemException {
         ElevatorButton elevatorButton = ElevatorButton.getButtonByValue(buttonValue);
+        if (elevatorButton == null) {
+            return;
+        }
+
         if (elevatorButton.isActive()) {
             elevatorButton.setActive(false);
         }
@@ -58,6 +62,10 @@ public class Elevator {
         }
     }
 
+    public boolean isElevatorOverloaded() {
+        return this.insidePersons.size() * Person.PERSON_WEIGHT > Elevator.MAX_WEIGHT - Person.PERSON_WEIGHT;
+    }
+
     public static void sleepForAction(int sleepTimeout) {
         try {
             Thread.sleep(sleepTimeout);
@@ -65,4 +73,6 @@ public class Elevator {
             throw new SystemError("Одна из систем лифта вышла из строя. Пожалуйста перезапустите лифт.");
         }
     }
+
+
 }

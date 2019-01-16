@@ -17,19 +17,16 @@ public enum Floor {
             new FloorPanel(Collections.singletonList(new FloorButton(Direction.ALL, "вызвать лифт")), SINGLE),
             new FloorPanel(Collections.singletonList(new FloorButton(Direction.UP, "вверх")), DOUBLE))),
 
-    SECOND(2, Arrays.asList(
-            new FloorPanel(Collections.singletonList(new FloorButton(Direction.ALL, "вызвать лифт")), SINGLE),
-            new FloorPanel(Arrays.asList(
-                    new FloorButton(Direction.UP, "вверх"),
-                    new FloorButton(Direction.DOWN, "вниз")), DOUBLE))),
+    SECOND(2, createPanelsWithButtons()),
+    THIRD(3, createPanelsWithButtons()),
+    FOURTH(4, createPanelsWithButtons()),
+    FIFTH(5, createPanelsWithButtons()),
+    SIXTH(6, createPanelsWithButtons()),
+    SEVENTH(7, createPanelsWithButtons()),
+    EIGHTH(8, createPanelsWithButtons()),
+    NINTH(9, createPanelsWithButtons()),
 
-    THIRD(3, Arrays.asList(
-            new FloorPanel(Collections.singletonList(new FloorButton(Direction.ALL, "вызвать лифт")), SINGLE),
-            new FloorPanel(Arrays.asList(
-                    new FloorButton(Direction.UP, "вверх"),
-                    new FloorButton(Direction.DOWN, "вниз")), DOUBLE))),
-
-    FOURTH(4, Arrays.asList(
+    TENTH(10, Arrays.asList(
             new FloorPanel(Collections.singletonList(new FloorButton(Direction.ALL, "вызвать лифт")), SINGLE),
             new FloorPanel(Collections.singletonList(new FloorButton(Direction.DOWN, "вниз")), DOUBLE)));
 
@@ -45,6 +42,14 @@ public enum Floor {
     Floor(int number, List<FloorPanel> floorPanels) {
         this.number = number;
         this.floorPanels = floorPanels;
+    }
+
+    private static List<FloorPanel> createPanelsWithButtons() {
+        return Arrays.asList(
+                new FloorPanel(Collections.singletonList(new FloorButton(Direction.ALL, "вызвать лифт")), SINGLE),
+                new FloorPanel(Arrays.asList(
+                        new FloorButton(Direction.UP, "вверх"),
+                        new FloorButton(Direction.DOWN, "вниз")), DOUBLE));
     }
 
     public boolean isButtonActive(Direction direction) {
@@ -84,6 +89,16 @@ public enum Floor {
         return Collections.emptyList();
     }
 
+    public FloorPanel getActivePanel() {
+        for (FloorPanel floorPanel : this.floorPanels) {
+            if (floorPanel.isWork()) {
+                return floorPanel;
+            }
+        }
+
+        return null;
+    }
+
     public static Floor getFloorByNumber(int number) {
         for (Floor floor : Floor.values()) {
             if (floor.getNumber() == number) {
@@ -97,5 +112,4 @@ public enum Floor {
     public void addPersonToFloor(Person person) {
         this.waitingPersons.add(person);
     }
-
 }

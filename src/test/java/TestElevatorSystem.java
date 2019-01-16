@@ -14,12 +14,12 @@ public class TestElevatorSystem {
     @Test
     public void testElevatorStartJob() throws ElevatorSystemException {
         List<Person> testData = new ArrayList<>();
-        testData.add(new Person("Nikita", 1, 4));
-        testData.add(new Person("Mike", 4, 1));
-        testData.add(new Person("Irina", 1, 2));
+        testData.add(new Person("Nikita", 2, 10));
+        testData.add(new Person("Mike", 3, 10));
+        testData.add(new Person("Irina", 4, 1));
         testData.add(new Person("Alex", 3, 2));
-        testData.add(new Person("Alex", 3, 4));
-        testData.add(new Person("Dim", 2, 1));
+        testData.add(new Person("Alex", 5, 1));
+        testData.add(new Person("Dim", 5, 10));
 
         Person stopPerson1 = new Person("Scott", 3, 1);
         stopPerson1.setStop(true);
@@ -33,7 +33,27 @@ public class TestElevatorSystem {
         stopPerson2.setTimeoutAfterPushStop(10);
         testData.add(stopPerson2);
 
-        InputData inputData = new InputData(PanelType.SINGLE, testData);
+        testData.add(new Person("Severus", 5, 10));
+        testData.add(new Person("Albus", 2, 3));
+        testData.add(new Person("Freddy", 6, 10));
+        testData.add(new Person("Jason", 6, 4));
+        testData.add(new Person("Lily", 4, 10));
+        testData.add(new Person("Bruce", 3, 10));
+        testData.add(new Person("Alex", 2, 10));
+        testData.add(new Person("Marty", 6, 1));
+        testData.add(new Person("Gloria", 7, 1));
+
+        Person vipPerson = new Person("Nikita", 5, 1);
+        vipPerson.setVip(true);
+        testData.add(vipPerson);
+
+        Person vipPerson2 = new Person("Kovalski", 5, 10);
+        vipPerson2.setVip(true);
+        testData.add(vipPerson2);
+
+        testData.add(new Person("Artur", 5, 10));
+
+        InputData inputData = new InputData(PanelType.DOUBLE, testData);
 
         ElevatorStartJob.gI().pushButtonsAndRunSystem(inputData);
     }

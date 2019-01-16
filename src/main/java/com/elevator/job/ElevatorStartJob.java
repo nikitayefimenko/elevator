@@ -1,8 +1,6 @@
 package com.elevator.job;
 
 import com.elevator.dto.*;
-import com.elevator.dto.buttons.Direction;
-import com.elevator.dto.buttons.FloorButton;
 import com.elevator.dto.data.InputData;
 import com.elevator.exception.ElevatorSystemException;
 import com.elevator.exception.SystemError;
@@ -57,7 +55,7 @@ public class ElevatorStartJob {
     }
 
     public void pushButtonsAndRunSystem(InputData inputData) throws ElevatorSystemException {
-        sendPersonsToFloorsAndPushButtons(inputData);
+        sendPersonsToFloorsAndCallElevator(inputData);
         ElevatorSystemWorker elevatorSystemWorker = new ElevatorSystemWorker(new Elevator(Floor.FIRST));
         elevatorSystemWorker.runElevatorSystem();
     }
@@ -82,32 +80,18 @@ public class ElevatorStartJob {
         return inputData.toString();
     }
 
-    private void sendPersonsToFloorsAndPushButtons(InputData inputData) {
+    private void sendPersonsToFloorsAndCallElevator(InputData inputData) {
         PanelType activePanelType = inputData.getActivePanelType();
         activateFloorPanel(activePanelType);
 
         inputData.getWaitingPersons().forEach(person -> {
-            int startFloorNumber = person.getStartFloor();
-            Floor startFloor = Floor.getFloorByNumber(startFloorNumber);
+            Floor startFloor = Floor.getFloorByNumber(person.getStartFloor());
             if (startFloor == null) {
                 System.out.println("Невозможно определить текущий этаж человека " + person.getName());
             } else {
                 startFloor.addPersonToFloor(person);
                 System.out.println(String.format("%s ожидает лифт на %d этаже, хочет попасть на %d этаж", person.getName(), person.getStartFloor(), person.getFinishFloor()));
-
-                switch (activePanelType) {
-                    case SINGLE: {
-                        pushButtonByPerson(person.getName(), Direction.ALL, startFloor);
-                        break;
-                    }
-                    case DOUBLE: {
-                        if (isPersonMoveUp(startFloorNumber, person.getFinishFloor())) {
-                            pushButtonByPerson(person.getName(), Direction.UP, startFloor);
-                        } else {
-                            pushButtonByPerson(person.getName(), Direction.DOWN, startFloor);
-                        }
-                    }
-                }
+                person.callTheElevator(startFloor);
             }
         });
     }
@@ -122,28 +106,13 @@ public class ElevatorStartJob {
         }
     }
 
-    private boolean isPersonMoveUp(int startFloorNumber, int finishFloorNumber) {
-        return startFloorNumber < finishFloorNumber;
-    }
-
-    private void pushButtonByPerson(String personName, Direction direction, Floor startFloor) {
-        if (!startFloor.isButtonActive(direction)) {
-            FloorButton button = startFloor.activateButton(direction);
-            if (button == null) {
-                System.out.println(String.format("%s не смог нажать свою кнопку на этаже %d", personName, startFloor.getNumber()));
-                return;
-            }
-
-            System.out.println(String.format("%s нажал кнопку \"%s\" на этаже %d\n", personName, button.getName(), startFloor.getNumber()));
-        }
-    }
-
     private void printStartInstruction() {
         System.out.println("\nВведите массив людей (в формате json), ожидающих лифт, указав так-же их параметры, после окончания ввода данных вида json необходимо написать end.\n" +
-                "Все параметры кроме stop, timeoutBeforePushStop, timeoutAfterPushStop - обязательные\n" +
+                "Все параметры кроме vip, stop, timeoutBeforePushStop, timeoutAfterPushStop - обязательные\n" +
                 "timeoutBeforePushStop - время в секундах (целое число, по умолчанию 0), которое отсчитывается после нажатия кнопки (finishFloor) человеком внутри лифта, по истечению данного времени человек нажимает кнопку STOP\n" +
                 "timeoutAfterPushStop - время в секундах (целое число, по умолчанию 0), которое отсчитывается после нажатия кнопки STOP, по истечению данного времени человек нажимает кнопку STOP для продолжения движения лифта\n" +
                 "Если в параметры startFloor, finishFloor, timeoutBeforePushStop, timeoutAfterPushStop будет введено не целое значение - дробная часть числа будет опущена\n" +
+                "Параметр panel может быть только со строковыми значениями single и double\n" +
                 "\n" +
                 "Пример:\n" +
                 "{\n" +
@@ -157,7 +126,8 @@ public class ElevatorStartJob {
                 "\t\t\t\"name\": \"Mike\",\n" +
                 "\t\t\t\"startFloor\": 3,\n" +
                 "\t\t\t\"finishFloor\": 2,\n" +
-                "\t\t\t\"stop\": false\n" +
+                "\t\t\t\"stop\": false,\n" +
+                "\t\t\t\"vip\": true\n" +
                 "\t\t},\n" +
                 "\t\t{\n" +
                 "\t\t\t\"name\": \"Irina\",\n" +
@@ -169,7 +139,7 @@ public class ElevatorStartJob {
                 "\t\t}\n" +
                 "\t]\n" +
                 "}end\n" +
-                "Если желаете запустить тестовый пример из задания - введите test\n" +
+                "Если желаете запустить тестовый пример - введите test\n" +
                 ">");
     }
 }

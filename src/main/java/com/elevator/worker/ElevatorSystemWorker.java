@@ -8,8 +8,8 @@ import com.elevator.dto.buttons.Direction;
 import com.elevator.dto.buttons.ElevatorButton;
 import com.elevator.dto.buttons.FloorButton;
 import com.elevator.exception.ElevatorSystemException;
-import com.elevator.exception.SystemError;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -20,6 +20,8 @@ public class ElevatorSystemWorker {
     private Elevator elevator;
 
     private Queue<ElevatorTask> elevatorTaskQueue = new PriorityQueue<>();
+
+    private Queue<ElevatorTask> vipTasksQueue = new PriorityQueue<>();
 
     private static int priorityNumForQueue = 0;
 
@@ -32,6 +34,8 @@ public class ElevatorSystemWorker {
         while (floorToTakePersons != null) {
             moveTo(floorToTakePersons);
             takeAndReleasePersons();
+
+            processVipTasks();
 
             while (!this.elevatorTaskQueue.isEmpty()) {
                 processTask(this.elevatorTaskQueue.poll());
@@ -82,17 +86,30 @@ public class ElevatorSystemWorker {
 
     private void processTask(ElevatorTask elevatorTask) throws ElevatorSystemException {
         Floor destinationFloor = elevatorTask.getDestinationFloor();
-        System.out.println(String.format("Лифт принял команду из очереди - перемещение на %d этаж", destinationFloor.getNumber()));
+        System.out.println(String.format("\nЛифт принял команду из очереди - перемещение на %d этаж", destinationFloor.getNumber()));
         Direction movingDirection = calcMovingDirection(this.elevator.getCurrentFloor().getNumber(), destinationFloor.getNumber());
         this.elevator.setMovingDirection(movingDirection);
         Floor nextFloor = this.elevator.getCurrentFloor();
         do {
+            processVipTasks();
             nextFloor = getNextFloor(nextFloor, movingDirection);
             if (isNeedToStopInNextFloor(nextFloor)) {
                 moveTo(nextFloor);
                 takeAndReleasePersons();
             }
         } while (destinationFloor != nextFloor);
+    }
+
+    private void processVipTasks() throws ElevatorSystemException {
+        while (!this.vipTasksQueue.isEmpty()) {
+            ElevatorTask vipTask = this.vipTasksQueue.poll();
+            Floor destinationFloor = vipTask.getDestinationFloor();
+            System.out.println(String.format("\nЛифт принял VIP команду - перемещение без остановок на %d этаж", destinationFloor.getNumber()));
+            Direction movingDirection = calcMovingDirection(this.elevator.getCurrentFloor().getNumber(), destinationFloor.getNumber());
+            this.elevator.setMovingDirection(movingDirection);
+            moveTo(destinationFloor);
+            takeAndReleasePersons();
+        }
     }
 
     private void moveTo(Floor destinationFloor) throws ElevatorSystemException {
@@ -149,27 +166,50 @@ public class ElevatorSystemWorker {
     }
 
     private void takePersonsAndAddTasks(List<Person> waitingPersons) {
-        this.elevator.addInsidePersons(waitingPersons);
-        waitingPersons.forEach(person -> {
-            System.out.println(person.getName() + " зашел в лифт");
-            Elevator.sleepForAction(1000);
-        });
-
-        waitingPersons.forEach(person -> {
-            this.elevatorTaskQueue.add(new ElevatorTask(Floor.getFloorByNumber(person.getFinishFloor()), ++priorityNumForQueue));
-            try {
-                this.elevator.activateButton(person.getFinishFloor());
-            } catch (ElevatorSystemException e) {
-                throw new SystemError(e.getMessage());
+        Iterator<Person> waitingPersonIterator = waitingPersons.iterator();
+        while (waitingPersonIterator.hasNext()) {
+            Person person = waitingPersonIterator.next();
+            ElevatorButton elevatorButton = ElevatorButton.getButtonByValue(person.getFinishFloor());
+            if (elevatorButton == null) {
+                System.out.println(person.getName() + " не может поехать на этаж " + person.getFinishFloor() + ". Данная кнопка лифта отсутствует");
+                waitingPersonIterator.remove();
+                continue;
             }
-            System.out.println(person.getName() + " нажал на кнопку " + person.getFinishFloor() + " внутри лифта");
-            Elevator.sleepForAction(500);
-            if (person.getStop() == Boolean.TRUE) {
-                pushStopButtonAsync(person);
-            }
-        });
 
-        waitingPersons.clear();
+            if (!this.elevator.isElevatorOverloaded()) {
+                this.elevator.addInsidePerson(person);
+                System.out.println(person.getName() + " зашел в лифт");
+                Elevator.sleepForAction(1000);
+
+                addNewTaskAndPushButton(person, elevatorButton);
+                waitingPersonIterator.remove();
+            } else {
+                System.out.println(String.format("\nВ лифте находится максимальное количество людей. %s не смог зайти внутрь и продолжил ожидать лифт.", person.getName()));
+                person.callTheElevator(Floor.getFloorByNumber(person.getStartFloor()));
+            }
+        }
+    }
+
+    private void addNewTaskAndPushButton(Person person, ElevatorButton elevatorButton) {
+        ElevatorTask elevatorTask = new ElevatorTask(Floor.getFloorByNumber(person.getFinishFloor()), ++priorityNumForQueue);
+        if (person.getVip() == Boolean.TRUE) {
+            System.out.println(person.getName() + " вставил VIP ключ и повернул его.");
+            person.pushElevatorButton(elevatorButton);
+            this.vipTasksQueue.add(elevatorTask);
+            System.out.println(person.getName() + " достал VIP ключ.");
+        } else {
+            this.elevatorTaskQueue.add(elevatorTask);
+
+            if (!elevatorButton.isActive()) {
+                person.pushElevatorButton(elevatorButton);
+            } else {
+                System.out.println(person.getName() + " поедет на " + person.getFinishFloor() + ". Данная кнопка лифта уже нажата.");
+            }
+        }
+
+        if (person.getStop() == Boolean.TRUE) {
+            pushStopButtonAsync(person);
+        }
     }
 
     private void pushStopButtonAsync(Person person) {
@@ -199,14 +239,20 @@ public class ElevatorSystemWorker {
         }
     }
 
-    private void closeDoors() throws ElevatorSystemException {
-        System.out.println("\nДвери лифта закрываются..");
-        Elevator.sleepForAction(1000);
+    private void closeDoors() {
+        if (this.elevator.isOpenedDoors()) {
+            System.out.println("\nДвери лифта закрываются..");
+            this.elevator.setOpenedDoors(false);
+            Elevator.sleepForAction(1000);
+        }
     }
 
-    private void openDoors() throws ElevatorSystemException {
-        System.out.println("Двери лифта открываются..");
-        Elevator.sleepForAction(1000);
+    private void openDoors() {
+        if (!this.elevator.isOpenedDoors()) {
+            System.out.println("Двери лифта открываются..");
+            this.elevator.setOpenedDoors(true);
+            Elevator.sleepForAction(1000);
+        }
     }
 
     private Direction calcMovingDirection(int startFloor, int finalFloor) {
@@ -257,6 +303,10 @@ public class ElevatorSystemWorker {
 
     private boolean isPersonsInsideToReleaseInNextFloor(Floor nextFloor) throws ElevatorSystemException {
         ElevatorButton nextFloorElevatorButton = ElevatorButton.getButtonByValue(nextFloor.getNumber());
+        if (nextFloorElevatorButton == null) {
+            return false;
+        }
+
         if (nextFloorElevatorButton.isActive()) {
             StringBuilder waitingNamesBuilder = new StringBuilder("Ожидающие высадки: ");
             for (Person person : this.elevator.getInsidePersons()) {
